@@ -5,7 +5,7 @@ const fs = require('fs');
 const util = require('util');
 
 const generateKeyPair = util.promisify(crypto.generateKeyPair);
-const padding = crypto.constants.RSA_PKCS1_PADDING;
+const padding = crypto.constants.RSA_PKCS1_OEAP_PADDING;
 
 async function main() {
   const [proc, command, keyFile] = process.argv.slice(1);
