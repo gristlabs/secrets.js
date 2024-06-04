@@ -2,7 +2,7 @@
 
 This is a small Node.js script for sharing secrets securely. A big goal is to be small enough that
 one can read and understand every line of it quickly. It currently stands at 72 lines, all in the
-file `secrets.js`.
+file `secrets.js`, with no dependencies (other than Node's standard libraries).
 
 ## Usage:
 
