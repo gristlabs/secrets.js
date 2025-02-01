@@ -31,10 +31,11 @@ async function main() {
       const encryptedKey = crypto.publicEncrypt({key}, symKey).toString('base64');
 
       const iv = crypto.randomBytes(16);
-      const cipher = crypto.createCipheriv('aes-256-cbc', symKey, iv);
+      const cipher = crypto.createCipheriv('aes-256-gcm', symKey, iv);
       let encryptedText = cipher.update(plaintext, 'utf8', 'base64');
       encryptedText += cipher.final('base64');
-      console.log(`$${iv.toString('base64')}$${encryptedKey}$${encryptedText}`);
+      const authTag = cipher.getAuthTag().toString('base64');
+      console.log(`$${iv.toString('base64')}$${encryptedKey}$${encryptedText}$${authTag}`);
     }
 
   } else if (command === 'decrypt') {
@@ -43,11 +44,11 @@ async function main() {
     const fullText = fs.readFileSync(0, {encoding: 'utf8'})
     let plaintext;
     if (fullText.startsWith('$')) {
-      const [ivText, encryptedKey, encryptedText] = fullText.split('$').slice(1);
+      const [ivText, encryptedKey, encryptedText, authTag] = fullText.split('$').slice(1);
       const iv = Buffer.from(ivText, 'base64');
       const symKey = crypto.privateDecrypt({key}, Buffer.from(encryptedKey, 'base64'));
-      const decipher = crypto.createDecipheriv('aes-256-cbc', symKey, iv);
-      plaintext = decipher.update(encryptedText, 'base64', 'utf8');
+      const decipher = crypto.createDecipheriv('aes-256-gcm', symKey, iv);
+      plaintext = decipher.setAuthTag(authTag, 'base64').update(encryptedText, 'base64', 'utf8');
       plaintext += decipher.final('utf8');
     } else {
       const encrypted = Buffer.from(fullText, 'base64');
