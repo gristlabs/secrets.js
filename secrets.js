@@ -5,7 +5,6 @@ const fs = require('fs');
 const util = require('util');
 
 const generateKeyPair = util.promisify(crypto.generateKeyPair);
-const padding = crypto.constants.RSA_PKCS1_OEAP_PADDING;
 
 async function main() {
   const [proc, command, keyFile] = process.argv.slice(1);
@@ -23,13 +22,13 @@ async function main() {
     const key = fs.readFileSync(keyFile, {encoding: 'utf8'});
     const plaintext = fs.readFileSync(0);
     try {
-      const encrypted = crypto.publicEncrypt({key, padding}, plaintext).toString('base64');
+      const encrypted = crypto.publicEncrypt({key}, plaintext).toString('base64');
       console.log(encrypted);
     } catch (e) {
       if (!/data too large/.test(e.message)) { throw e; }
       // For too large data, generate and encrypt a symmetric key first.
       const symKey = crypto.randomBytes(32);
-      const encryptedKey = crypto.publicEncrypt({key, padding}, symKey).toString('base64');
+      const encryptedKey = crypto.publicEncrypt({key}, symKey).toString('base64');
 
       const iv = crypto.randomBytes(16);
       const cipher = crypto.createCipheriv('aes-256-cbc', symKey, iv);
@@ -46,13 +45,13 @@ async function main() {
     if (fullText.startsWith('$')) {
       const [ivText, encryptedKey, encryptedText] = fullText.split('$').slice(1);
       const iv = Buffer.from(ivText, 'base64');
-      const symKey = crypto.privateDecrypt({key, padding}, Buffer.from(encryptedKey, 'base64'));
+      const symKey = crypto.privateDecrypt({key}, Buffer.from(encryptedKey, 'base64'));
       const decipher = crypto.createDecipheriv('aes-256-cbc', symKey, iv);
       plaintext = decipher.update(encryptedText, 'base64', 'utf8');
       plaintext += decipher.final('utf8');
     } else {
       const encrypted = Buffer.from(fullText, 'base64');
-      plaintext = crypto.privateDecrypt({key, padding}, encrypted);
+      plaintext = crypto.privateDecrypt({key}, encrypted);
     }
     fs.writeFileSync(1, plaintext);
 
